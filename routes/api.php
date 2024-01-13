@@ -60,10 +60,10 @@ Route::post(
     [App\Http\Controllers\Api\RegisterController::class, 'register']
 )->name('register');
 
-// Route::post(
-//     '/login',
-//     [App\Http\Controllers\Api\LoginController::class, 'login']
-// )->name('login');
+Route::post(
+    '/login',
+    [App\Http\Controllers\Api\LoginController::class, 'login']
+)->name('login');
 
 Route::post(
     '/resend/email/token',
@@ -76,10 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
         [App\Http\Controllers\Api\RegisterController::class, 'verifyEmail']
     );
     // Route::middleware('verify.api')->group(function () {
-    // Route::post(
-    //     '/logout',
-    //     [App\Http\Controllers\Api\LoginController::class, 'logout']
-    // );
+    Route::post(
+        '/logout',
+        [App\Http\Controllers\Api\LoginController::class, 'logout']
+    );
     // });
 });
 
