@@ -83,15 +83,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // });
 });
 
-// Route::post(
-//     '/forgot-password',
-//     [App\Http\Controllers\Api\ForgotPasswordController::class, 'forgotPassword']
-// );
+Route::post(
+    '/forgot-password',
+    [App\Http\Controllers\Api\ForgotPasswordController::class, 'forgotPassword']
+);
 // Route::post(
 //     '/verify/pin',
 //     [App\Http\Controllers\Api\ForgotPasswordController::class, 'verifyPin']
 // );
-// Route::post(
-//     '/reset-password',
-//     [App\Http\Controllers\Api\ResetPasswordController::class, 'resetPassword']
-// );
+Route::post(
+    '/reset-password',
+    [App\Http\Controllers\Api\ResetPasswordController::class, 'resetPassword']
+);

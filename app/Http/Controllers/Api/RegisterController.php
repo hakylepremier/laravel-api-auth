@@ -88,6 +88,11 @@ class RegisterController extends Controller
             ->where('token', $request->token)
             ->delete();
 
+        // $user = DB::table('users')->firstOrCreate(
+        //     ['email' => 'john@example.com'],
+        //     ['name' => 'John Doe']
+        // );
+
         $user = User::find(Auth::user()->id);
         $user->email_verified_at = Carbon::now()->getTimestamp();
         $user->save();
