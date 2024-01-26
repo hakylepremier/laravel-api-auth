@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -26,13 +26,21 @@ class ResetPasswordController extends Controller
             'token' => 'required|size:6',
             'email' => 'required|email|exists:' . User::class,
             'password' => 'required|min:8|confirmed',
+            'device_name' => 'required|string|max:255',
         ]);
 
         // check if token exists for this user
-        $check = DB::table('password_reset_tokens')->where([
+        $select = DB::table('api_password_reset_tokens')->where([
             ['email', $request->all()['email']],
-            ['token', $request->all()['token']],
-        ])->first();
+        ])->latest()->first();
+
+        $token = $select ? $select->token : null;
+
+        if ($token) {
+            $check = Hash::check($request->token, $token);
+        } else {
+            $check = false;
+        }
 
         if (!$check) {
             return new JsonResponse([
@@ -48,7 +56,7 @@ class ResetPasswordController extends Controller
         }
 
         // check if token is not expired
-        $expired = Carbon::parse($check->created_at)->addSeconds($this->expires)->isPast();
+        $expired = Carbon::parse($select->created_at)->addSeconds($this->expires)->isPast();
         if ($expired) {
             return new JsonResponse([
                 'message' => "The token has expired, request a new one",
@@ -61,9 +69,8 @@ class ResetPasswordController extends Controller
         }
 
         // delete token
-        DB::table('password_reset_tokens')->where([
+        DB::table('api_password_reset_tokens')->where([
             ['email', $request->all()['email']],
-            ['token', $request->all()['token']],
         ])->delete();
 
         // get user and change password
@@ -78,13 +85,14 @@ class ResetPasswordController extends Controller
         event(new PasswordReset($user));
 
         // create token to auto login user
-        $token = $user->createToken('myapptoken')->plainTextToken;
+        $token = $user->createToken($request->device_name)->plainTextToken;
 
         return new JsonResponse(
             [
                 'code' => 'password_reset_success',
                 'message' => "Your password has been reset successfully",
                 'token' => $token,
+                'device_name' => $request->device_name,
             ],
             200
         );

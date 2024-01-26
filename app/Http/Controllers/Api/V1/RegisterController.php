@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Mail\VerifyEmail;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'device_name' => 'required|string|max:255',
         ]);
 
         $user = User::create([
@@ -31,7 +33,7 @@ class RegisterController extends Controller
         ]);
 
         if ($user) {
-            $verify2 = DB::table('password_reset_tokens')->where([
+            $verify2 = DB::table('api_verify_email_tokens')->where([
                 ['email', $request->all()['email']],
             ]);
 
@@ -39,24 +41,25 @@ class RegisterController extends Controller
                 $verify2->delete();
             }
             $pin = rand(100000, 999999);
-            DB::table('password_reset_tokens')
+            DB::table('api_verify_email_tokens')
                 ->insert(
                     [
                         'email' => $request->all()['email'],
-                        'token' => $pin,
+                        'token' => Hash::make($pin),
                     ]
                 );
         }
 
         Mail::to($request->email)->send(new VerifyEmail($pin));
 
-        $token = $user->createToken('myapptoken')->plainTextToken;
+        $token = $user->createToken($request->device_name)->plainTextToken;
 
         return new JsonResponse(
             [
                 'code' => 'register_success',
                 'message' => 'Successful created user. Please check your email for a 6-digit pin to verify your email.',
                 'token' => $token,
+                'device_name' => $request->device_name,
             ],
             201
         );
@@ -68,11 +71,21 @@ class RegisterController extends Controller
             'token' => 'required',
         ]);
 
-        $select = DB::table('password_reset_tokens')
-            ->where('email', Auth::user()->email)
-            ->where('token', $request->token);
+        // $select = DB::table('api_verify_email_tokens')
+        //     ->where('email', Auth::user()->email)
+        //     ->where('token', $request->token);
 
-        if ($select->get()->isEmpty()) {
+        $select = DB::table('api_verify_email_tokens')
+            ->where('email', Auth::user()->email)->latest()->first();
+        $token = $select ? $select->token : null;
+
+        if ($token) {
+            $check = Hash::check($request->token, $token);
+        } else {
+            $check = false;
+        }
+
+        if (!$check) {
             return new JsonResponse([
                 'code' => 'pin_invalid',
                 'message' => "Invalid PIN",
@@ -83,33 +96,33 @@ class RegisterController extends Controller
 
         // return ["auth" => Auth::user(), "auth_token" => $select];
 
-        $select = DB::table('password_reset_tokens')
-            ->where('email', Auth::user()->email)
-            ->where('token', $request->token)
-            ->delete();
+        // $select = DB::table('api_verify_email_tokens')
+        //     ->where('email', Auth::user()->email)
+        //     ->where('token', $request->token)
+        //     ->delete();
 
-        // $user = DB::table('users')->firstOrCreate(
-        //     ['email' => 'john@example.com'],
-        //     ['name' => 'John Doe']
-        // );
+        DB::table('api_verify_email_tokens')
+            ->where('email', Auth::user()->email)
+            ->delete();
 
         $user = User::find(Auth::user()->id);
         $user->email_verified_at = Carbon::now()->getTimestamp();
         $user->save();
+
+        event(new Verified($request->user()));
 
         return new JsonResponse(['code' => 'email_verified', 'message' => "Email is verified"], 200);
     }
 
     public function resendPin(Request $request)
     {
-
         $request->validate([
             'email' => 'required|string|lowercase|email|max:255',
         ]);
 
         // return ["auth" => Auth::user()];
 
-        $verify = DB::table('password_reset_tokens')->where([
+        $verify = DB::table('api_verify_email_tokens')->where([
             ['email', $request->all()['email']],
         ]);
 
@@ -118,9 +131,9 @@ class RegisterController extends Controller
         }
 
         $token = random_int(100000, 999999);
-        $password_reset = DB::table('password_reset_tokens')->insert([
+        $password_reset = DB::table('api_verify_email_tokens')->insert([
             'email' => $request->all()['email'],
-            'token' => $token,
+            'token' => Hash::make($token),
             'created_at' => Carbon::now(),
         ]);
 
@@ -129,7 +142,7 @@ class RegisterController extends Controller
 
             return new JsonResponse(
                 [
-                    'success' => "verify_email_sent",
+                    'success' => "success",
                     'message' => "A verification mail has been resent",
                 ],
                 200

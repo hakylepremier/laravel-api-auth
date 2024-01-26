@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ResetPassword;
@@ -9,13 +9,14 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class ForgotPasswordController extends Controller
 {
     public function forgotPassword(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate(['email' => 'required|email|exists:' . User::class]);
 
         $verify = User::where('email', $request->only('email'))->exists();
 
@@ -33,7 +34,7 @@ class ForgotPasswordController extends Controller
             $token = random_int(100000, 999999);
 
             // save token
-            $verify2 = DB::table('password_reset_tokens')->where([
+            $verify2 = DB::table('api_password_reset_tokens')->where([
                 ['email', $request->only(['email'])],
             ]);
 
@@ -47,13 +48,13 @@ class ForgotPasswordController extends Controller
             //     'email' => $request->email,
             // ]);
 
-            $password_reset = DB::table('password_reset_tokens')->insert([
+            $password_reset = DB::table('api_password_reset_tokens')->insert([
                 'email' => $request->email,
-                'token' => $token,
+                'token' => Hash::make($token),
                 'created_at' => Carbon::now(),
             ]);
 
-            // $password_reset = DB::table('password_reset_tokens')
+            // $password_reset = DB::table('api_password_reset_tokens')
             //     ->insert(
             //         [
             //             'email' => $request->all()['email'],
@@ -68,7 +69,7 @@ class ForgotPasswordController extends Controller
                 return new JsonResponse(
                     [
                         'code' => 'password_pin',
-                        'message' => "Please check your email for a 6 digit pin",
+                        'message' => "Please check your email for a 6 digit pin to rest your password",
                     ],
                     200
                 );
