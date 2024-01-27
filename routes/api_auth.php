@@ -24,40 +24,40 @@ Route::group(['prefix' => 'v1'], function () {
 
     Route::post(
         '/register',
-        [App\Http\Controllers\Api\V1\RegisterController::class, 'register']
+        [App\Http\Controllers\Api\V1\Auth\RegisterController::class, 'register']
     )->name('register');
 
     Route::post(
         '/login',
-        [App\Http\Controllers\Api\V1\LoginController::class, 'login']
+        [App\Http\Controllers\Api\V1\Auth\LoginController::class, 'login']
     )->name('login');
 
     Route::post(
         '/resend/email/token',
-        [App\Http\Controllers\Api\V1\RegisterController::class, 'resendPin']
+        [App\Http\Controllers\Api\V1\Auth\RegisterController::class, 'resendPin']
     )->name('resendPin');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post(
             'email/verify',
-            [App\Http\Controllers\Api\V1\RegisterController::class, 'verifyEmail']
+            [App\Http\Controllers\Api\V1\Auth\RegisterController::class, 'verifyEmail']
         );
         // Route::middleware('verify.api\V1')->group(function () {
         Route::post(
             '/logout',
-            [App\Http\Controllers\Api\V1\LoginController::class, 'logout']
+            [App\Http\Controllers\Api\V1\Auth\LoginController::class, 'logout']
         );
         // });
     });
 
     Route::post(
         '/forgot-password',
-        [App\Http\Controllers\Api\V1\ForgotPasswordController::class, 'forgotPassword']
+        [App\Http\Controllers\Api\V1\Auth\ForgotPasswordController::class, 'forgotPassword']
     );
 
     Route::post(
         '/reset-password',
-        [App\Http\Controllers\Api\V1\ResetPasswordController::class, 'resetPassword']
+        [App\Http\Controllers\Api\V1\Auth\ResetPasswordController::class, 'resetPassword']
     );
 
 });
