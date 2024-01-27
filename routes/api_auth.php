@@ -1,10 +1,23 @@
 <?php
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Route::group(['prefix' => 'v1', 'namespace' => 'App\Http\Controllers\Api\V1', 'middleware' => 'auth:sanctum'], function () {
 //     //
 // });
+
+Route::middleware(['auth:sanctum', 'verified.api'])->get('/sample', function (Request $request) {
+    return
+        [
+        'success' => true,
+        'request-user' => $request->user(),
+        'auth' => Auth::user(),
+        'data' => ['Some data from the database'],
+    ];
+
+});
 
 Route::group(['prefix' => 'v1'], function () {
     //
