@@ -34,7 +34,7 @@ class ApiVerifyEmailMiddlewareTest extends TestCase
         // $response->assertRedirect(RouteServiceProvider::HOME);
     }
 
-    public function test_api_verify_email_middleware_alows_verified_users_to_visit_route(): void
+    public function test_api_verify_email_middleware_allows_verified_users_to_visit_route(): void
     {
         Sanctum::actingAs(
             User::factory()->create(),
